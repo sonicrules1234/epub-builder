@@ -46,6 +46,7 @@ struct Metadata {
     pub description: Option<String>,
     pub subject: Option<String>,
     pub license: Option<String>,
+    pub source: Option<String>,
 }
 
 impl Metadata {
@@ -55,11 +56,12 @@ impl Metadata {
             title: String::new(),
             author: String::new(),
             lang: String::from("en"),
-            generator: String::from("Rust EPUB library"),
+            generator: String::from("Rust EPUBCreate"),
             toc_name: String::from("Table Of Contents"),
             description: None,
             subject: None,
             license: None,
+            source: None
         }
     }
 }
@@ -181,6 +183,7 @@ impl<Z: Zip> EpubBuilder<Z> {
             "description" => self.metadata.description = Some(value.into()),
             "subject" => self.metadata.subject = Some(value.into()),
             "license" => self.metadata.license = Some(value.into()),
+            "source" => self.metadata.source = Some(value.into()),
             "toc_name" => self.metadata.toc_name = value.into(),
             s => bail!("invalid metadata '{}'", s),
         }
@@ -193,7 +196,7 @@ impl<Z: Zip> EpubBuilder<Z> {
     /// some pages (such as nav.xhtml), you don't have use it in your documents though it
     /// makes sense to also do so.
     pub fn stylesheet<R: Read>(&mut self, content: R) -> Result<&mut Self> {
-        self.add_resource("stylesheet.css", content, "text/css")?;
+        self.add_resource("Styles/style.css", content, "text/css")?;
         self.stylesheet = true;
         Ok(self)
     }
@@ -379,6 +382,10 @@ impl<Z: Zip> EpubBuilder<Z> {
         if let Some(ref rights) = self.metadata.license {
             write!(optional, "<dc:rights>{}</dc:rights>\n", rights)?;
         }
+        if let Some(ref source) = self.metadata.source {
+            write!(optional, "<dc:source>{}</dc:source>\n", source)?;
+        }
+        write!(optional, "<dc:publisher>{}</dc:publisher>\n", self.metadata.generator)?;
         let date = chrono::Utc::now().format("%Y-%m-%dT%H:%M:%SZ");
         let uuid = uuid::adapter::Urn::from_uuid(uuid::Uuid::new_v4()).to_string();
 
